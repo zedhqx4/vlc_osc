@@ -151,7 +151,6 @@ static void *Run(void *data)
     intf_sys_t *sys = intf->p_sys;
     uint8_t packet[OSC_MAX_PACKET];
 
-    vlc_thread_set_name("vlc-osc");
     for (;;)
     {
         struct pollfd pfd = { .fd = sys->fd, .events = POLLIN };
