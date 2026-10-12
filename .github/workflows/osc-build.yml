@@ -1,0 +1,94 @@
+name: OSC control plugin build
+
+on:
+  push:
+    paths:
+      - 'modules/control/osc.c'
+      - 'modules/control/Makefile.am'
+      - '.github/workflows/osc-build.yml'
+  pull_request:
+    paths:
+      - 'modules/control/osc.c'
+      - 'modules/control/Makefile.am'
+      - '.github/workflows/osc-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Linux (native)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake autopoint build-essential cmake             gettext libtool pkg-config flex bison python3
+      - name: Bootstrap and configure VLC 3.0.x
+        run: |
+          ./bootstrap
+          ./configure --disable-lua --disable-qt --disable-skins2 --disable-nls             --disable-macosx --disable-chromecast --disable-vdpau --disable-vaapi             --disable-wayland --disable-xcb --disable-xvideo --disable-alsa             --disable-pulse --disable-dbus --disable-udev
+      - name: Compile OSC module
+        run: make -C modules/control libosc_plugin.la
+      - name: Collect module
+        run: |
+          mkdir -p artifacts
+          find modules/control -type f -name 'libosc_plugin.so' -exec cp {} artifacts/ \;
+          test -n "$(find artifacts -type f -name 'libosc_plugin.so' -print -quit)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vlc-osc-linux
+          path: artifacts/libosc_plugin.so
+          if-no-files-found: error
+
+  macos:
+    name: macOS (native)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          brew update
+          brew install autoconf automake libtool pkg-config gettext flex bison
+          echo "$(brew --prefix gettext)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix gettext)/sbin" >> "$GITHUB_PATH"
+      - name: Bootstrap and configure VLC 3.0.x
+        run: |
+          ./bootstrap
+          extras/package/macosx/configure.sh --disable-lua --disable-qt             --disable-skins2 --disable-nls
+      - name: Compile OSC module
+        run: make -C modules/control libosc_plugin.la
+      - name: Collect module
+        run: |
+          mkdir -p artifacts
+          find modules/control -type f \( -name 'libosc_plugin.dylib' -o -name 'libosc_plugin.so' \) -exec cp {} artifacts/ \;
+          test -n "$(find artifacts -type f -name 'libosc_plugin.*' -print -quit)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vlc-osc-macos
+          path: artifacts/libosc_plugin.*
+          if-no-files-found: error
+
+  windows:
+    name: Windows x86_64 (cross-build)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cross-build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake autopoint build-essential cmake             gettext git libtool libtool-bin make pkg-config python3 ragel             yasm nasm zip unzip p7zip-full bison flex gcc-mingw-w64-x86-64             g++-mingw-w64-x86-64 mingw-w64-tools
+      - name: Build VLC 3.0.x and OSC module for Windows
+        run: extras/package/win32/build.sh -z -o "$GITHUB_WORKSPACE/vlc_install_dir"
+      - name: Collect module
+        run: |
+          mkdir -p artifacts
+          find "$GITHUB_WORKSPACE/vlc_install_dir" -type f -iname '*osc*plugin*.dll' -exec cp {} artifacts/ \;
+          test -n "$(find artifacts -type f -iname '*osc*plugin*.dll' -print -quit)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vlc-osc-windows-x64
+          path: artifacts/*
+          if-no-files-found: error
