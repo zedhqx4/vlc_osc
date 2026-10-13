@@ -35,7 +35,7 @@ jobs:
       - name: Collect module
         run: |
           mkdir -p artifacts
-          find modules/control -type f -name 'libosc_plugin.so' -exec cp {} artifacts/ \;
+          find modules -type f -name 'libosc_plugin.so' -exec cp {} artifacts/ \;
           test -n "$(find artifacts -type f -name 'libosc_plugin.so' -print -quit)"
       - uses: actions/upload-artifact@v4
         with:
@@ -57,13 +57,15 @@ jobs:
       - name: Bootstrap and configure VLC 3.0.x
         run: |
           ./bootstrap
-          extras/package/macosx/configure.sh --disable-lua --disable-qt             --disable-skins2 --disable-nls
+          ./configure --disable-lua --disable-qt --disable-skins2 --disable-nls             --disable-macosx --disable-chromecast --disable-vdpau             --disable-wayland --disable-xcb --disable-xvideo --disable-alsa             --disable-pulse --disable-dbus --disable-udev
       - name: Compile OSC module
-        run: make -C modules/control libosc_plugin.la
+        run: |
+          make -C compat
+          make -C modules libosc_plugin.la
       - name: Collect module
         run: |
           mkdir -p artifacts
-          find modules/control -type f \( -name 'libosc_plugin.dylib' -o -name 'libosc_plugin.so' \) -exec cp {} artifacts/ \;
+          find modules -type f \( -name 'libosc_plugin.dylib' -o -name 'libosc_plugin.so' \) -exec cp {} artifacts/ \;
           test -n "$(find artifacts -type f -name 'libosc_plugin.*' -print -quit)"
       - uses: actions/upload-artifact@v4
         with:
