@@ -29,10 +29,11 @@ jobs:
       - name: Bootstrap and configure VLC 3.0.x
         run: |
           ./bootstrap
-          ./configure --disable-lua --disable-qt --disable-skins2 --disable-nls             --disable-macosx --disable-chromecast --disable-vdpau --disable-vaapi             --disable-wayland --disable-xcb --disable-xvideo --disable-alsa             --disable-pulse --disable-dbus --disable-udev
+          ./configure --disable-lua --disable-qt --disable-skins2 --disable-nls             --disable-macosx --disable-sparkle --disable-chromecast --disable-vdpau --disable-vaapi             --disable-wayland --disable-xcb --disable-xvideo --disable-alsa             --disable-pulse --disable-dbus --disable-udev
       - name: Compile OSC module
         run: |
           make -C compat
+          make -C src libvlccore.la
           make -C modules libosc_plugin.la
       - name: Collect module
         run: |
