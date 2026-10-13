@@ -56,12 +56,12 @@ vlc_module_begin()
     add_shortcut("osc")
 vlc_module_end()
 
-typedef struct
+struct intf_sys_t
 {
     int fd;
     vlc_thread_t thread;
     playlist_t *playlist;
-} intf_sys_t;
+};
 
 /* OSC strings include a NUL terminator and padding to a 4-byte boundary. */
 static bool ReadString(const uint8_t *buf, size_t len, size_t *offset,
